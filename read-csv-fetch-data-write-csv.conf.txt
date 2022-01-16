@@ -1,6 +1,6 @@
 input {
         file{
-                path => "/home/aditya/logstash-7.16.2/SBA_Base_Apr20_Sep20_1_data.csv"
+                path => "/home/aditya/logstash-7.16.2/Base1_data.csv"
                 start_position => "beginning"
                 sincedb_path => "/home/aditya/logstash-7.16.2/sincedb.txt"
         }
@@ -8,7 +8,7 @@ input {
 filter {
  
   csv{
-     columns =>["COD_ACCT_NO","COD_AADHAAR_NO"]
+     columns =>["COLUMN_1","COLUMN_2"]
      separator => ","
   }
  
@@ -24,8 +24,8 @@ filter {
       }
       ssl_certificate_validation => false
       body => {
-        "referenceKey" => "%{COD_AADHAAR_NO}"
-        "apiKey" => "paymentBank"
+        "referenceKey" => "%{COLUMN_2}"
+        "apiKey" => "STATICVAL"
         "requestId" => "uniqueskey"
       }
     body_format => "json"
@@ -37,7 +37,7 @@ filter {
  
   if [RES_STATUS] == "0"{
       mutate {
-         add_field => {"REAL_AADHAAR_NO" =>"%{[body][data][uid]}"}
+         add_field => {"COLUMN_3" =>"%{[body][data][uid]}"}
         }
     }
  
@@ -45,9 +45,9 @@ filter {
 output{
         csv{
  
-         fields =>["[COD_ACCT_NO]","[COD_AADHAAR_NO]","[REAL_AADHAAR_NO]"]
+         fields =>["[COLUMN_1]","[COLUMN_2]","[COLUMN_3]"]
  
-        path => "/home/aditya/logstash-7.16.2/SBA_Base_Apr20_Sep20_1_data_output-%{+YYYY-MM-DD}.csv"
+        path => "/home/aditya/logstash-7.16.2/Base1_data_output-%{+YYYY-MM-DD}.csv"
  
  
         }

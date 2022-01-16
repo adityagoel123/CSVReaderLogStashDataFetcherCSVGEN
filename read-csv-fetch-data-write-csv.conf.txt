@@ -1,0 +1,58 @@
+input {
+        file{
+                path => "/home/aditya/logstash-7.16.2/SBA_Base_Apr20_Sep20_1_data.csv"
+                start_position => "beginning"
+                sincedb_path => "/home/aditya/logstash-7.16.2/sincedb.txt"
+        }
+}
+filter {
+ 
+  csv{
+     columns =>["COD_ACCT_NO","COD_AADHAAR_NO"]
+     separator => ","
+  }
+ 
+ 
+   http {
+      url => "https://<IP_OF_THIRDPARTY>:9083/api/v1/getAadhaarNumber"
+      verb => "POST"
+      headers => {
+        "contentId" => "contentid"
+        "channel" => "iOS"
+        "Content-Type" => "application/json"
+        "Accept" => "application/json"
+      }
+      ssl_certificate_validation => false
+      body => {
+        "referenceKey" => "%{COD_AADHAAR_NO}"
+        "apiKey" => "paymentBank"
+        "requestId" => "uniqueskey"
+      }
+    body_format => "json"
+  }
+ 
+  mutate{
+      add_field => {"RES_STATUS" => "%{[body][meta][status]}"}
+   }
+ 
+  if [RES_STATUS] == "0"{
+      mutate {
+         add_field => {"REAL_AADHAAR_NO" =>"%{[body][data][uid]}"}
+        }
+    }
+ 
+}
+output{
+        csv{
+ 
+         fields =>["[COD_ACCT_NO]","[COD_AADHAAR_NO]","[REAL_AADHAAR_NO]"]
+ 
+        path => "/home/aditya/logstash-7.16.2/SBA_Base_Apr20_Sep20_1_data_output-%{+YYYY-MM-DD}.csv"
+ 
+ 
+        }
+       # comment stdout section if doesn't need console logs
+        stdout{
+        codec=>rubydebug
+        }
+}
